@@ -31,13 +31,18 @@ class Library:
                     return False
         return False
 
-                
-
+            
     # 本の返却する
     def return_book(self,book_id):
         for book in self.books:
-            if book.book_id == book_id and book.is_borrowed:
-                book.is_borrowed = False
+            if book.book_id == book_id:
+                if book.is_borrowed:
+                    book.is_borrowed = False 
+                    return True
+                else:
+                    return False 
+        return False 
+
                  
 
 
