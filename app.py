@@ -24,15 +24,20 @@ class Library:
     def borrow_book(self,book_id):
         for book in self.books:
             if book.book_id == book_id:
-                if book.is_borrowed == False:
+                if not book.is_borrowed:
                     book.is_borrowed = True 
+                    return True
+                else:
+                    return False
+        return False
+
+                
 
     # 本の返却する
     def return_book(self,book_id):
         for book in self.books:
-            if book.book_id == book_id:
-                if book.is_borrowed == True:
-                    book.is_borrowed = False
+            if book.book_id == book_id and book.is_borrowed:
+                book.is_borrowed = False
                  
 
 
