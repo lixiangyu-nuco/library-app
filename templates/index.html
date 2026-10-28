@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>図書館管理システム</title>
+    
+    <style>
+        li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>図書館管理システム</h1>
+        <h2>書籍登録</h2>
+        
+        <form action="{{ url_for('add_book') }}" method="POST">
+            <label>書籍名：</label>
+            <input type="text" name="title">
+            <label>書籍ID：</label>
+            <input type="text" name="book_id">
+            <button type="submit">登録</button>
+        </form>
+
+        <h2>書籍一覧</h2>
+</body>
+
+
+
+
+
+</html>
+
+

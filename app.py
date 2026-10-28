@@ -1,4 +1,6 @@
 # 本の情報を管理するクラス
+from flask import Flask, render_template, redirect , request, flash
+
 class Book:
     def __init__(self, title, book_id):
         self.title = title 
@@ -13,15 +15,19 @@ class Library:
         self.books = []
 
     #本を登録する
-    def add_book(self,book):
+    def add_book(self, book):
+        for existing_book in self.books:
+            if existing_book.book_id == book.book_id:
+                return False 
         self.books.append(book)
+        return True
 
     # 登録済みの本の取得する
     def get_books(self):
         return self.books
 
-    # 本の貸し出す
-    def borrow_book(self,book_id):
+    # 本を貸し出す
+    def borrow_book(self, book_id):
         for book in self.books:
             if book.book_id == book_id:
                 if not book.is_borrowed:
@@ -32,8 +38,8 @@ class Library:
         return False
 
             
-    # 本の返却する
-    def return_book(self,book_id):
+    # 本を返却する
+    def return_book(self, book_id):
         for book in self.books:
             if book.book_id == book_id:
                 if book.is_borrowed:
@@ -43,12 +49,31 @@ class Library:
                     return False 
         return False 
 
-                 
 
-
-        
-        
+#Flask
+library = Library()
+app = Flask(__name__)
+app.secret_key = "dev-secret-key"
     
+@app.route("/")
+def index():
+    return render_template(
+        "index.html", 
+        books=library.get_books(),
+    )
+
+@app.route("/add", methods=["POST"])
+def add_book():
+    title = request.form["title"]
+    book_id = request.form["book_id"]
+    book = Book(title, book_id)
+    result = library.add_book(book)
+    if result:
+        flash("登録が完了しました。")
+    else:
+        flash("同じ書籍IDが既に登録されています。")
+    return redirect("/")
+
 
 
 
