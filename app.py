@@ -1,5 +1,5 @@
 # 本の情報を管理するクラス
-from flask import Flask, render_template, redirect , request, flash
+from flask import Flask, render_template, redirect , request, flash, url_for
 
 class Book:
     def __init__(self, title, book_id):
@@ -65,7 +65,7 @@ def index():
 @app.route("/add", methods=["POST"])
 def add_book():
     title = request.form["title"]
-    book_id = request.form["book_id"]
+    book_id = int(request.form["book_id"])
     book = Book(title, book_id)
     result = library.add_book(book)
     if result:
@@ -75,6 +75,20 @@ def add_book():
     return redirect("/")
 
 
+@app.route("/borrow_book/<int:book_id>", methods=["POST"])
+def borrow_book(book_id):
+    result=library.borrow_book(book_id)
+    if result:
+        flash("貸出が完了しました。")
+    else:
+        flash("貸出できませんでした。")
+    return redirect("/")
 
-
-
+@app.route("/return_book/<int:book_id>", methods=["POST"])
+def return_book(book_id):
+    result=library.return_book(book_id)
+    if result:
+        flash("返却が完了しました。")
+    else:
+        flash("返却できませんでした。")
+    return redirect("/")

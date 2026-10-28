@@ -15,6 +15,11 @@
 
 <body>
     <h1>図書館管理システム</h1>
+        <!-- ここにメッセージを表示する -->
+
+
+
+
         <h2>書籍登録</h2>
         
         <form action="{{ url_for('add_book') }}" method="POST">
@@ -26,6 +31,35 @@
         </form>
 
         <h2>書籍一覧</h2>
+        <ul>
+            {% for book in books %}
+                <li>
+                    {{ book.book_id }}
+                    {{ book.title }}
+                    {% if book.is_borrowed %}
+                        貸出中
+                    {% else %}
+                        貸出可能
+                    {% endif %}
+                </li>
+            {% endfor %}
+            
+            <!-- ここに貸出・返却ボタンを追加する -->
+             {% if book.is_borrowed %}
+            <form action="{{ url_for('return_book', book_id=book.book_id) }}" method="POST">
+                <button type="submit">返却</button>
+            </form>
+
+            {% else %}
+            <form action="{{ url_for('borrow_book', book_id=book.book_id) }}" method="POST">
+                <button type="submit">貸出</button>
+            </form>
+            {% endif %}
+
+        </ul>
+
+
+
 </body>
 
 
