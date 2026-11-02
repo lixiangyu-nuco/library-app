@@ -14,6 +14,13 @@ cursor.execute('''
     )
 ''')
 
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS members (
+        member_id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL
+    )
+''')
+
 conn.commit()
 conn.close()
 
@@ -43,6 +50,7 @@ class Library:
             ''', (book.book_id, book.title, book.is_borrowed))
             conn.commit()
             return True
+        
         except sqlite3.IntegrityError:
             conn.rollback()
             return False
@@ -122,48 +130,60 @@ class Library:
         finally:
             conn.close()
 
+class Member:
+    def __init__(self, member_id, name):
+        self.member_id = member_id
+        self.name = name
 
-# #図書館の本を管理するクラス
-# class Library:
+    def __init__(self, db_path="library.db"):
+        self.db_path = db_path
 
-#     #本のリストを初期化する
-#     def __init__(self):
-#         self.books = []
+    def get_connection(self):
+        return sqlite3.connect(self.db_path)
 
-#     #本を登録する
-#     def add_book(self, book):
-#         for existing_book in self.books:
-#             if existing_book.book_id == book.book_id:
-#                 return False 
-#         self.books.append(book)
-#         return True
+    #SQLiteデータベースに会員を登録する
+    def add_member(self, member):
+        conn = self.get_connection()
 
-#     # 登録済みの本の取得する
-#     def get_books(self):
-#         return self.books
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO members (member_id, name)
+                VALUES (?, ?)
+            ''', (member.member_id, member.name))
+            conn.commit()
+            return True
 
-#     # 本を貸し出す
-#     def borrow_book(self, book_id):
-#         for existing_book in self.books:
-#             if existing_book.book_id == book_id:
-#                 if not existing_book.is_borrowed:
-#                     existing_book.is_borrowed = True 
-#                     return True
-#                 else:
-#                     return False
-#         return False
+        except sqlite3.IntegrityError:
+            conn.rollback()
+            return False
+        
+        except sqlite3.Error:
+            conn.rollback()
+            raise
 
+        finally:
+            conn.close()
+
+    #登録済みの書籍をデータベースから取得する
+    def get_member(self, member_id):
+        conn = self.get_connection()
+
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT member_id, name
+                FROM members
+                WHERE member_id = ?
+            ''', (member_id,))
             
-#     # 本を返却する
-#     def return_book(self, book_id):
-#         for existing_book in self.books:
-#             if existing_book.book_id == book_id:
-#                 if existing_book.is_borrowed:
-#                     existing_book.is_borrowed = False 
-#                     return True
-#                 else:
-#                     return False 
-#         return False 
+            row = cursor.fetchone()
+
+        finally:
+            conn.close()
+
+        return Member(row[0], row[1])
+
 
 #Flask
 library = Library()
