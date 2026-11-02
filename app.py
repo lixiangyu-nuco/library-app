@@ -92,3 +92,4 @@ def return_book(book_id):
     else:
         flash("返却できませんでした。")
     return redirect("/")
+
