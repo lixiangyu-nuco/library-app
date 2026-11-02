@@ -28,10 +28,10 @@ class Library:
 
     # 本を貸し出す
     def borrow_book(self, book_id):
-        for book in self.books:
-            if book.book_id == book_id:
-                if not book.is_borrowed:
-                    book.is_borrowed = True 
+        for existing_book in self.books:
+            if existing_book.book_id == book_id:
+                if not existing_book.is_borrowed:
+                    existing_book.is_borrowed = True 
                     return True
                 else:
                     return False
@@ -40,10 +40,10 @@ class Library:
             
     # 本を返却する
     def return_book(self, book_id):
-        for book in self.books:
-            if book.book_id == book_id:
-                if book.is_borrowed:
-                    book.is_borrowed = False 
+        for existing_book in self.books:
+            if existing_book.book_id == book_id:
+                if existing_book.is_borrowed:
+                    existing_book.is_borrowed = False 
                     return True
                 else:
                     return False 
@@ -77,7 +77,7 @@ def add_book():
 
 @app.route("/borrow_book/<int:book_id>", methods=["POST"])
 def borrow_book(book_id):
-    result=library.borrow_book(book_id)
+    result = library.borrow_book(book_id)
     if result:
         flash("貸出が完了しました。")
     else:
@@ -86,7 +86,7 @@ def borrow_book(book_id):
 
 @app.route("/return_book/<int:book_id>", methods=["POST"])
 def return_book(book_id):
-    result=library.return_book(book_id)
+    result = library.return_book(book_id)
     if result:
         flash("返却が完了しました。")
     else:
