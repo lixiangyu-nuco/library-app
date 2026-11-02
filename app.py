@@ -49,7 +49,6 @@ class Library:
                     return False 
         return False 
 
-
 #Flask
 library = Library()
 app = Flask(__name__)
@@ -64,8 +63,21 @@ def index():
 
 @app.route("/add", methods=["POST"])
 def add_book():
-    title = request.form["title"]
-    book_id = int(request.form["book_id"])
+    title = request.form["title"].strip()
+    if not title:
+        flash("書籍名を入力してください。")
+        return redirect("/")
+
+    try:
+        book_id = int(request.form["book_id"])
+    except ValueError:
+        flash("書籍IDには整数を入力してください。")
+        return redirect("/")
+
+    if book_id < 1:
+        flash("書籍IDには1以上の整数を入力してください。")
+        return redirect("/")
+
     book = Book(title, book_id)
     result = library.add_book(book)
     if result:
