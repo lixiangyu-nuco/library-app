@@ -220,7 +220,6 @@ def add_book():
         flash("同じ書籍IDが既に登録されています。")
     return redirect("/")
 
-
 @app.route("/borrow_book/<int:book_id>", methods=["POST"])
 def borrow_book(book_id):
     result = library.borrow_book(book_id)
@@ -239,3 +238,29 @@ def return_book(book_id):
         flash("返却できませんでした。")
     return redirect("/")
 
+@app.route("/add_member", methods=["POST"])
+def add_member():
+    name = request.form["name"].strip()
+    if not name:
+        flash("会員名を入力してください。")
+        return redirect("/")
+
+    try:
+        member_id = int(request.form["member_id"])
+    except ValueError:
+        flash("会員IDには整数を入力してください。")
+        return redirect("/")
+
+    if member_id < 1:
+        flash("会員IDには1以上の整数を入力してください。")
+        return redirect("/")
+
+    member = Member(member_id, name)
+    result = library.add_member(member)
+    if result:
+        flash("会員登録が完了しました。")
+    else:
+        flash("同じ会員IDが既に登録されています。")
+    return redirect("/")
+
+@app.route("/get_member", methods=["POST"])
