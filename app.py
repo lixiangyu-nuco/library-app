@@ -264,3 +264,26 @@ def add_member():
     return redirect("/")
 
 @app.route("/get_member", methods=["POST"])
+def get_member():
+    member_id = request.form["member_id"].strip()
+    if not member_id:
+        flash("会員IDを入力してください。")
+        return redirect("/")
+
+    try:
+        member_id = int(member_id)
+    except ValueError:
+        flash("会員IDには整数を入力してください。")
+        return redirect("/")
+
+    if member_id < 1:
+        flash("会員IDには1以上の整数を入力してください。")
+        return redirect("/")
+
+    member = library.get_member(member_id)
+    if member is None:
+        flash("会員IDが見つかりませんでした。")
+        return redirect("/")
+    
+    flash(f"会員ID: {member.member_id}, 会員名: {member.name}")
+    return redirect("/")
