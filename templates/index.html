@@ -69,15 +69,14 @@
         </form>
 
        <h2>会員検索</h2>
-        <form action="{{ url_for('search_member') }}" method="GET">
-            <label>会員ID：</label>
+        <form action="{{ url_for('get_member') }}" method="POST">
+                <label>会員ID：</label>
             <input type="number" name="member_id" min="1" required>
             <button type="submit">検索</button>
         </form> 
 
 
 </body>
-
 </html>
 
 
