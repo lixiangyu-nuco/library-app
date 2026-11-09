@@ -17,7 +17,7 @@ cursor.execute('''
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS members (
         member_id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL
+        name TEXT NOT NULL CHECK(length(trim(name)) > 0)
     )
 ''')
 
@@ -30,8 +30,12 @@ class Book:
         self.is_borrowed = False 
         self.book_id = book_id 
 
-class Library:
+class Member:
+    def __init__(self, member_id, name):
+        self.member_id = member_id
+        self.name = name
 
+class Library:
     def __init__(self, db_path="library.db"):
         self.db_path = db_path
 
@@ -41,9 +45,9 @@ class Library:
     #SQLiteデータベースに書籍を登録する
     def add_book(self, book):
         conn = self.get_connection()
-        cursor = conn.cursor()
 
         try:
+            cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO books (book_id, title, is_borrowed)
                 VALUES (?, ?, ?)
@@ -54,6 +58,10 @@ class Library:
         except sqlite3.IntegrityError:
             conn.rollback()
             return False
+
+        except sqlite3.Error:
+            conn.rollback()
+            raise
         
         finally:
             conn.close()
@@ -81,9 +89,9 @@ class Library:
     #SQLiteデータベースで書籍の貸出状態を更新する
     def borrow_book(self, book_id):
         conn = self.get_connection()
-        cursor = conn.cursor()
-
+        
         try: 
+            cursor = conn.cursor()
             cursor.execute('''
                 UPDATE books
                 SET is_borrowed = ?
@@ -107,9 +115,9 @@ class Library:
     #SQLiteデータベースで書籍の返却状態を更新する
     def return_book(self, book_id):
         conn = self.get_connection()
-        cursor = conn.cursor()
 
         try: 
+            cursor = conn.cursor()
             cursor.execute('''
                 UPDATE books
                 SET is_borrowed = ?
@@ -129,17 +137,6 @@ class Library:
         
         finally:
             conn.close()
-
-class Member:
-    def __init__(self, member_id, name):
-        self.member_id = member_id
-        self.name = name
-
-    def __init__(self, db_path="library.db"):
-        self.db_path = db_path
-
-    def get_connection(self):
-        return sqlite3.connect(self.db_path)
 
     #SQLiteデータベースに会員を登録する
     def add_member(self, member):
@@ -165,7 +162,7 @@ class Member:
         finally:
             conn.close()
 
-    #登録済みの書籍をデータベースから取得する
+    #登録済みの会員をデータベースから取得する
     def get_member(self, member_id):
         conn = self.get_connection()
 
@@ -176,14 +173,15 @@ class Member:
                 FROM members
                 WHERE member_id = ?
             ''', (member_id,))
-            
             row = cursor.fetchone()
 
         finally:
             conn.close()
 
-        return Member(row[0], row[1])
+        if row is None:
+            return None
 
+        return Member(row[0], row[1])
 
 #Flask
 library = Library()
