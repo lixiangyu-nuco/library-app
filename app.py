@@ -21,6 +21,21 @@ cursor.execute('''
     )
 ''')
 
+#ここに貸出履歴テーブルの作成処理を追加する
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS borrowing_history (
+        history_id INTEGER PRIMARY KEY,
+        member_id INTEGER,
+        book_id INTEGER,
+        borrow_date TEXT,
+        return_date TEXT,
+        FOREIGN KEY (member_id) REFERENCES members (member_id),
+        FOREIGN KEY (book_id) REFERENCES books (book_id)
+    )
+''')
+
+
+
 conn.commit()
 conn.close()
 
@@ -40,8 +55,10 @@ class Library:
         self.db_path = db_path
 
     def get_connection(self):
-        return sqlite3.connect(self.db_path)
-
+        conn = sqlite3.connect(self.db_path)
+        conn.excecute('PRAGMA foreign_keys = ON')  # 外部キー制約を有効にする
+        return conn
+    
     #SQLiteデータベースに書籍を登録する
     def add_book(self, book):
         conn = self.get_connection()
@@ -86,10 +103,18 @@ class Library:
 
         return books 
 
-    #SQLiteデータベースで書籍の貸出状態を更新する
-    def borrow_book(self, book_id):
+   #SQLiteデータベースで書籍の貸出状態を更新する
+    def borrow_book(self, book_id, member_id):
+
+        #会員が存在するか確認する
+        member = self.get_member(member_id)
+
+        if member is None:
+            return False
+
+        #データベースに接続する
         conn = self.get_connection()
-        
+
         try: 
             cursor = conn.cursor()
             cursor.execute('''
@@ -99,6 +124,13 @@ class Library:
             ''', (True, book_id))
 
             if cursor.rowcount == 1:
+
+                #ここに貸出履歴の追加処理を追加する
+                cursor.execute('''
+                    INSERT INTO borrowing_history (member_id, book_id, borrow_date)
+                    VALUES (?, ?, datetime('now'))
+                ''', (member_id, book_id))      
+
                 conn.commit()
                 return True
             else:
@@ -113,7 +145,14 @@ class Library:
             conn.close()
 
     #SQLiteデータベースで書籍の返却状態を更新する
-    def return_book(self, book_id):
+    def return_book(self, book_id, member_id):
+        #会員が存在するか確認する
+        member = self.get_member(member_id)
+
+        if member is None:
+            return False
+        
+        #データベースに接続する
         conn = self.get_connection()
 
         try: 
@@ -125,8 +164,23 @@ class Library:
             ''', (False, book_id))
 
             if cursor.rowcount == 1:
+                #貸出履歴の返却日時を更新する
+                cursor.execute('''
+                    UPDATE borrowing_history
+                    SET return_date = datetime('now')
+                    WHERE member_id = ? 
+                      AND book_id = ? 
+                      AND return_date IS NULL
+                ''', (member_id, book_id))
+
+                #貸出履歴の更新が成功したか確認する
+                if cursor.rowcount != 1:
+                    conn.rollback()
+                    return False
+
                 conn.commit()
                 return True
+                    
             else:
                 conn.rollback()
                 return False        
