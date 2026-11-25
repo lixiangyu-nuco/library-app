@@ -80,7 +80,35 @@ class Library:
 
         return books 
 
-   #SQLiteデータベースで書籍の貸出状態を更新する
+    # 指定された会員が現在借りている書籍を取得する
+    def get_borrowed_books(self, member_id):
+        conn = self.get_connection()
+
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT b.book_id, b.title
+                FROM books AS b
+                JOIN borrowing_history AS bh
+                  ON b.book_id = bh.book_id
+                WHERE bh.member_id = ?
+                  AND bh.return_date IS NULL
+            ''', (member_id,))
+            rows = cursor.fetchall()
+
+        finally:
+            conn.close()
+
+        borrowed_books = []
+        for row in rows:
+            book = Book(row[1], row[0])
+            book.is_borrowed = True
+            borrowed_books.append(book)
+
+        return borrowed_books
+
+
+    #SQLiteデータベースで書籍の貸出状態を更新する
     def borrow_book(self, book_id, member_id):
 
         #会員が存在するか確認する
@@ -102,7 +130,7 @@ class Library:
 
             if cursor.rowcount == 1:
 
-                #ここに貸出履歴の追加処理を追加する
+                #貸出履歴を登録する
                 cursor.execute('''
                     INSERT INTO borrowing_history (member_id, book_id, borrow_date)
                     VALUES (?, ?, datetime('now'))
@@ -213,3 +241,38 @@ class Library:
             return None
 
         return Member(row[0], row[1])
+
+
+    # すべての貸出履歴を取得する
+    def get_borrowing_history(self):
+        conn = self.get_connection()
+
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT bh.member_id, m.name,
+                       bh.book_id, b.title,
+                       bh.borrow_date, bh.return_date
+                FROM borrowing_history AS bh
+                JOIN members AS m
+                  ON bh.member_id = m.member_id
+                JOIN books AS b
+                  ON bh.book_id = b.book_id
+            ''')
+            rows = cursor.fetchall()
+
+        finally:
+            conn.close()
+
+        history = []
+        for row in rows:
+            history.append({
+                "member_id": row[0],
+                "member_name": row[1],
+                "book_id": row[2],
+                "book_title": row[3],
+                "borrow_date": row[4],
+                "return_date": row[5]
+            })
+
+        return history

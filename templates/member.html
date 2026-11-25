@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>会員画面</title>
+
+    <style>
+        li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>会員画面</h1>
+
+    <!-- メッセージの表示 -->
+    {% for message in get_flashed_messages() %}
+        <p>{{ message }}</p>
+    {% endfor %}
+
+    <!-- 会員情報の表示 -->
+    <h2>会員情報</h2>
+    <p>会員ID：{{ member.member_id }}</p>
+    <p>会員名：{{ member.name }}</p>
+
+
+    <!-- 貸出可能な書籍一覧 -->
+    <h2>貸出可能な書籍一覧</h2>
+    <ul>
+        {% for book in books %}
+            {% if not book.is_borrowed %}
+                <li>
+                    {{ book.book_id }}
+                    {{ book.title }}
+
+                    <form action="{{ url_for('borrow_book', book_id=book.book_id, member_id=member.member_id) }}" method="POST">
+                        <button type="submit">貸出</button>
+                    </form>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+
+    <!-- 現在借りている書籍一覧 -->
+    <h2>現在借りている書籍一覧</h2>
+    <ul>
+        {% for book in borrowed_books %}
+            <li>
+                {{ book.book_id }}
+                {{ book.title }}
+                <form action="{{ url_for('return_book', book_id=book.book_id, member_id=member.member_id) }}" method="POST">
+                    <button type="submit">返却</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>       
+
+    <!-- 管理者画面に戻る -->
+    <form action="{{ url_for('index') }}" method="GET">
+        <button type="submit">管理者画面に戻る</button>
+    </form> 
+
+</body>
+</html>

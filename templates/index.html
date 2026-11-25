@@ -42,19 +42,6 @@
                     {% else %}
                         貸出可能
                     {% endif %}
-  
-            
-                    <!-- ここに貸出・返却ボタンを追加する -->
-                    {% if book.is_borrowed %}
-                        <form action="{{ url_for('return_book', book_id=book.book_id) }}" method="POST">
-                            <button type="submit">返却</button>
-                        </form>
-
-                    {% else %}
-                        <form action="{{ url_for('borrow_book', book_id=book.book_id) }}" method="POST">
-                            <button type="submit">貸出</button>
-                        </form>
-                    {% endif %}
                 </li>
             {% endfor %}
         </ul>

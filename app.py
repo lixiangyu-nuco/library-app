@@ -118,4 +118,5 @@ def member_page(member_id):
         "member.html",
         member=member,
         books=library.get_books(),
+        borrowed_books=library.get_borrowed_books(member_id),
     )
