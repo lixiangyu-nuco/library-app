@@ -274,18 +274,18 @@ def add_book():
         flash("同じ書籍IDが既に登録されています。")
     return redirect("/")
 
-@app.route("/borrow_book/<int:book_id>", methods=["POST"])
-def borrow_book(book_id):
-    result = library.borrow_book(book_id)
+@app.route("/borrow_book/<int:book_id>/<int:member_id>", methods=["POST"])
+def borrow_book(book_id, member_id):
+    result = library.borrow_book(book_id, member_id)
     if result:
         flash("貸出が完了しました。")
     else:
         flash("貸出できませんでした。")
     return redirect("/")
 
-@app.route("/return_book/<int:book_id>", methods=["POST"])
-def return_book(book_id):
-    result = library.return_book(book_id)
+@app.route("/return_book/<int:book_id>/<int:member_id>", methods=["POST"])
+def return_book(book_id, member_id):
+    result = library.return_book(book_id, member_id)
     if result:
         flash("返却が完了しました。")
     else:
@@ -339,5 +339,18 @@ def get_member():
         flash("会員IDが見つかりませんでした。")
         return redirect("/")
     
-    flash(f"会員ID: {member.member_id}, 会員名: {member.name}")
-    return redirect("/")
+    # 会員専用画面へ移動する
+    return redirect(url_for("member_page", member_id=member.member_id))
+
+@app.route("/member/<int:member_id>")
+def member_page(member_id):
+    member = library.get_member(member_id)
+    if member is None:
+        flash("会員IDが見つかりませんでした。")
+        return redirect("/")
+
+    return render_template(
+        "member.html",
+        member=member,
+        books=library.get_books(),
+    )
