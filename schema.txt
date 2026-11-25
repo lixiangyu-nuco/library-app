@@ -1,0 +1,23 @@
+-- 書籍テーブルの作成
+CREATE TABLE IF NOT EXISTS books (
+    book_id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    is_borrowed BOOLEAN DEFAULT FALSE
+);
+
+-- 会員テーブルの作成
+CREATE TABLE IF NOT EXISTS members (
+    member_id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL CHECK(length(trim(name)) > 0)
+);
+
+-- 貸出履歴テーブルの作成
+CREATE TABLE IF NOT EXISTS borrowing_history (
+    history_id INTEGER PRIMARY KEY,
+    member_id INTEGER NOT NULL,
+    book_id INTEGER NOT NULL,
+    borrow_date TEXT NOT NULL,
+    return_date TEXT,
+    FOREIGN KEY (member_id) REFERENCES members (member_id),
+    FOREIGN KEY (book_id) REFERENCES books (book_id)
+);

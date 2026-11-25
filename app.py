@@ -1,241 +1,5 @@
-# 本の情報を管理するクラス
-from flask import Flask, render_template, redirect , request, flash, url_for
-import sqlite3
-
-#SQLiteデータベースの初期化
-conn = sqlite3.connect("library.db")
-cursor = conn.cursor()
-
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS books (
-        book_id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
-        is_borrowed BOOLEAN DEFAULT FALSE
-    )
-''')
-
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS members (
-        member_id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL CHECK(length(trim(name)) > 0)
-    )
-''')
-
-#ここに貸出履歴テーブルの作成処理を追加する
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS borrowing_history (
-        history_id INTEGER PRIMARY KEY,
-        member_id INTEGER,
-        book_id INTEGER,
-        borrow_date TEXT,
-        return_date TEXT,
-        FOREIGN KEY (member_id) REFERENCES members (member_id),
-        FOREIGN KEY (book_id) REFERENCES books (book_id)
-    )
-''')
-
-
-
-conn.commit()
-conn.close()
-
-class Book:
-    def __init__(self, title, book_id):
-        self.title = title 
-        self.is_borrowed = False 
-        self.book_id = book_id 
-
-class Member:
-    def __init__(self, member_id, name):
-        self.member_id = member_id
-        self.name = name
-
-class Library:
-    def __init__(self, db_path="library.db"):
-        self.db_path = db_path
-
-    def get_connection(self):
-        conn = sqlite3.connect(self.db_path)
-        conn.excecute('PRAGMA foreign_keys = ON')  # 外部キー制約を有効にする
-        return conn
-    
-    #SQLiteデータベースに書籍を登録する
-    def add_book(self, book):
-        conn = self.get_connection()
-
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO books (book_id, title, is_borrowed)
-                VALUES (?, ?, ?)
-            ''', (book.book_id, book.title, book.is_borrowed))
-            conn.commit()
-            return True
-        
-        except sqlite3.IntegrityError:
-            conn.rollback()
-            return False
-
-        except sqlite3.Error:
-            conn.rollback()
-            raise
-        
-        finally:
-            conn.close()
-
-    #登録済みの書籍をデータベースから取得する
-    def get_books(self):
-        conn = self.get_connection()
-
-        try:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM books')
-            rows = cursor.fetchall()
-
-        finally:
-            conn.close()
-
-        books = []
-        for row in rows:
-            book = Book(row[1], row[0])
-            book.is_borrowed = bool(row[2])
-            books.append(book) 
-
-        return books 
-
-   #SQLiteデータベースで書籍の貸出状態を更新する
-    def borrow_book(self, book_id, member_id):
-
-        #会員が存在するか確認する
-        member = self.get_member(member_id)
-
-        if member is None:
-            return False
-
-        #データベースに接続する
-        conn = self.get_connection()
-
-        try: 
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE books
-                SET is_borrowed = ?
-                WHERE book_id = ? AND is_borrowed = 0
-            ''', (True, book_id))
-
-            if cursor.rowcount == 1:
-
-                #ここに貸出履歴の追加処理を追加する
-                cursor.execute('''
-                    INSERT INTO borrowing_history (member_id, book_id, borrow_date)
-                    VALUES (?, ?, datetime('now'))
-                ''', (member_id, book_id))      
-
-                conn.commit()
-                return True
-            else:
-                conn.rollback()
-                return False        
-        
-        except sqlite3.Error:
-            conn.rollback()
-            raise
-        
-        finally:
-            conn.close()
-
-    #SQLiteデータベースで書籍の返却状態を更新する
-    def return_book(self, book_id, member_id):
-        #会員が存在するか確認する
-        member = self.get_member(member_id)
-
-        if member is None:
-            return False
-        
-        #データベースに接続する
-        conn = self.get_connection()
-
-        try: 
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE books
-                SET is_borrowed = ?
-                WHERE book_id = ? AND is_borrowed = 1
-            ''', (False, book_id))
-
-            if cursor.rowcount == 1:
-                #貸出履歴の返却日時を更新する
-                cursor.execute('''
-                    UPDATE borrowing_history
-                    SET return_date = datetime('now')
-                    WHERE member_id = ? 
-                      AND book_id = ? 
-                      AND return_date IS NULL
-                ''', (member_id, book_id))
-
-                #貸出履歴の更新が成功したか確認する
-                if cursor.rowcount != 1:
-                    conn.rollback()
-                    return False
-
-                conn.commit()
-                return True
-                    
-            else:
-                conn.rollback()
-                return False        
-        
-        except sqlite3.Error:
-            conn.rollback()
-            raise
-        
-        finally:
-            conn.close()
-
-    #SQLiteデータベースに会員を登録する
-    def add_member(self, member):
-        conn = self.get_connection()
-
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO members (member_id, name)
-                VALUES (?, ?)
-            ''', (member.member_id, member.name))
-            conn.commit()
-            return True
-
-        except sqlite3.IntegrityError:
-            conn.rollback()
-            return False
-        
-        except sqlite3.Error:
-            conn.rollback()
-            raise
-
-        finally:
-            conn.close()
-
-    #登録済みの会員をデータベースから取得する
-    def get_member(self, member_id):
-        conn = self.get_connection()
-
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT member_id, name
-                FROM members
-                WHERE member_id = ?
-            ''', (member_id,))
-            row = cursor.fetchone()
-
-        finally:
-            conn.close()
-
-        if row is None:
-            return None
-
-        return Member(row[0], row[1])
+from flask import Flask, render_template, redirect, request, flash, url_for
+from library import Book, Member, Library
 
 #Flask
 library = Library()
@@ -281,7 +45,7 @@ def borrow_book(book_id, member_id):
         flash("貸出が完了しました。")
     else:
         flash("貸出できませんでした。")
-    return redirect("/")
+    return redirect(url_for("member_page", member_id=member_id))
 
 @app.route("/return_book/<int:book_id>/<int:member_id>", methods=["POST"])
 def return_book(book_id, member_id):
@@ -290,7 +54,7 @@ def return_book(book_id, member_id):
         flash("返却が完了しました。")
     else:
         flash("返却できませんでした。")
-    return redirect("/")
+    return redirect(url_for("member_page", member_id=member_id))
 
 @app.route("/add_member", methods=["POST"])
 def add_member():
@@ -345,6 +109,7 @@ def get_member():
 @app.route("/member/<int:member_id>")
 def member_page(member_id):
     member = library.get_member(member_id)
+
     if member is None:
         flash("会員IDが見つかりませんでした。")
         return redirect("/")
